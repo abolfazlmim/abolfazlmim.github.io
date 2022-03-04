@@ -1,0 +1,22 @@
+.footer {
+  display: block;
+  box-sizing: border-box;
+  height: 500px;
+  background-color: #5050ee;
+  clip-path: ellipse(132% 100% at 52.46% 100%);
+}
+p {
+  color: #fff;
+  font-size: 20px;
+  font-weight: 600;
+  padding: 10px;
+  text-align: center;
+}
+a {
+  color: #fff;
+  font-size: 20px;
+  font-weight: 600;
+  padding: 10px;
+  text-align: center;
+  position: center;
+}
