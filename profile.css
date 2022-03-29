@@ -100,3 +100,8 @@ body {
   border: 1px solid #7900ff;
   cursor: pointer;
 }
+footer{
+  display: flex;
+  flex-direction: column;
+
+}
