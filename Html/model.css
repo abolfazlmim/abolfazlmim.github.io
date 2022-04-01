@@ -1,0 +1,38 @@
+body {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    font-family: monospace;
+    font-size: 1rem;
+  }
+  .btn {
+    font-family: monospace;
+    min-width: 130px;
+    height: 40px;
+    color: #fff;
+    padding: 5px 10px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+    display: inline-block;
+    outline: none;
+    border: 2px solid #212529;
+    background: #212529;
+  }
+  .btn:hover {
+    background: #fff;
+    color: #212529
+  }
+  h2 {
+    font-size: 2rem;
+  }
+  div {
+    max-width: 25rem;
+  }
+  #modal {
+    padding: 1rem;
+    max-width: 40rem;
+  }
