@@ -1,14 +1,18 @@
+*  , *::before , *::after {
+    box-sizing: border-box;
+}
 p {
     padding: 10px 20px 10px 20px; /* tl tr bl br */
     border : 5px solid red;
     padding:0;
 
 }
+.box::before {
+    content: "Hello";
+}
 .box {
     width:100px;
     height: 100px;
     background-color: gold;
-    padding : 20px;
-    border : 10px solid orange;
-    box-sizing: border-box;
+    display: inline-block;
 }
