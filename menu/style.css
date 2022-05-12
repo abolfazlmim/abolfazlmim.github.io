@@ -1,0 +1,28 @@
+/* Generic Styles */
+
+body {
+    background-color: #f1f5f9;
+  }
+  
+  header {
+    background-color: white;
+    padding: 0.8rem 1.4rem;
+    min-width: 767px;
+  }
+  
+  ul {
+    list-style-type: none;
+    padding: 0;
+    display: flex;
+    gap: 2.8rem;
+  }
+  
+  ul li a {
+    color: #333;
+    text-decoration: none;
+  }
+  
+  .push-right {
+    margin-left: auto;
+  }
+  
