@@ -1,0 +1,50 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <style>
+        body{
+          background: navajowhite;
+          background-size: cover;
+          font-family: 'Trebuchet MS', sans-serif; 
+        }
+        .container{
+      display: inline-block;
+    }
+        .typed-out{
+  overflow: hidden;
+  border-right: .15em solid orange;
+  white-space: nowrap;
+  font-size: 1.6rem;
+  width: 0;
+  animation: 
+    typing 1s steps(20, end) forwards;
+}
+@keyframes typing {
+      from { width: 0 }
+      to { width: 100% }
+    }
+    </style>
+</head>
+<body>
+ <!-- HTML Tip  You can create an accordion element in pure HTML -->
+    <details>
+        <summary> Veiw Frequently asked questions </summary>
+        <ul>
+            <li>Question1 </li> 
+            <li>Question2 </li>
+            <li>Question1 </li> 
+            <li>Question2 </li>
+            <li>Question1 </li> 
+            <li>Question2 </li>
+        </ul>
+    </details>
+    <div class="container">
+        <div class="typed-out">Web Developer</div>
+      </div>
+</body>
+</html>
