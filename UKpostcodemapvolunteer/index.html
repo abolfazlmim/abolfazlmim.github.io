@@ -1,217 +1,203 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Volunteer Distance Calculator ( Developed by AM) </title>
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Volunteer Locator</title>
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 20px;
-        }
-        #map {
-            height: 500px;
-            margin-top: 20px;
-        }
-        .input-group {
-            margin-bottom: 10px;
-        }
-        label {
-            display: block;
-            margin-bottom: 5px;
-        }
-        input {
-            width: 100%;
-            padding: 8px;
-            box-sizing: border-box;
-        }
-        button {
-            padding: 10px 20px;
-            background-color: #007bff;
-            color: white;
-            border: none;
-            cursor: pointer;
-        }
-        button:hover {
-            background-color: #0056b3;
-        }
-        #results {
-            margin-top: 20px;
-        }
-        #results table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-        #results th, #results td {
-            padding: 10px;
-            border: 1px solid #ddd;
-            text-align: left;
-        }
-        #results th {
-            background-color: #f4f4f4;
-        }
+      body {
+        font-family: Arial, sans-serif;
+        text-align: center;
+        margin: 0;
+        padding: 0;
+      }
+      .container {
+        max-width: 700px;
+        margin: 20px auto;
+        text-align: center;
+        padding: 20px;
+        background: #f4f4f4;
+        border-radius: 10px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+      }
+      input,
+      textarea,
+      button {
+        margin: 10px;
+        padding: 12px;
+        width: 90%;
+        font-size: 16px;
+      }
+      button {
+        background-color: #28a745;
+        color: white;
+        border: none;
+        cursor: pointer;
+      }
+      button:hover {
+        background-color: #218838;
+      }
+      #map {
+        height: 700px; /* Increased map height */
+        margin-top: 20px;
+        border-radius: 10px;
+      }
     </style>
-</head>
-<body>
-    <h1>Volunteer Distance Calculator</h1>
-    <div class="input-group">
-        <label for="requestPostcode">Requester Postcode ( main POst code ):</label>
-        <input type="text" id="requestPostcode" placeholder="Enter requester postcode">
+  </head>
+  <body>
+    <div class="container">
+      <h1>Volunteer Locator</h1>
+      <label for="requesterPostcode">Requester's Postcode:</label><br />
+      <input
+        type="text"
+        id="requesterPostcode"
+        placeholder="Enter requester's postcode (e.g., SW1A 1AA)"
+      /><br />
+
+      <label for="volunteerPostcodes">Volunteer Postcodes (one per line):</label
+      ><br />
+      <textarea
+        id="volunteerPostcodes"
+        rows="6"
+        placeholder="Enter volunteer postcodes, one per line"
+      ></textarea
+      ><br />
+
+      <button id="generateMap">Generate Map</button>
     </div>
-    <div class="input-group">
-        <label for="volunteerPostcodes">Volunteer Postcodes (comma-separated):</label>
-        <input type="text" id="volunteerPostcodes" placeholder="E.g., E1 6AN, W1A 1AA">
-    </div>
-    <div class="input-group">
-        <label for="requesterIcon">Requester Marker Color (e.g., red, green):</label>
-        <input type="text" id="requesterIcon" placeholder="red">
-    </div>
-    <div class="input-group">
-        <label for="volunteerIcon">Volunteer Marker Color (e.g., blue, purple):</label>
-        <input type="text" id="volunteerIcon" placeholder="blue">
-    </div>
-    <button onclick="calculateDistances()">Calculate Distances</button>
-    <div id="results">
-        <h2>Distances</h2>
-        <table>
-            <thead>
-                <tr>
-                    <th>Postcode</th>
-                    <th>Distance (miles)</th>
-                </tr>
-            </thead>
-            <tbody id="distanceTable">
-                <!-- Distances will be populated here  / sort by distance min to max  -->
-            </tbody>
-        </table>
-    </div>
+
     <div id="map"></div>
 
-    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
     <script>
-        // Geocoding function using Nominatim API
-        async function getCoordinates(postcode) {
-            const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(postcode)}&format=json&limit=1`;
-            const response = await fetch(url);
-            const data = await response.json();
-            if (data.length > 0) {
-                return [parseFloat(data[0].lat), parseFloat(data[0].lon)];
-            } else {
-                throw new Error(`Could not find coordinates for postcode: ${postcode}`);
-            }
+      // Initialize the map
+      const map = L.map("map").setView([51.5074, -0.1278], 10); // Default to London
+      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+        maxZoom: 19,
+      }).addTo(map);
+
+      // Layer group for resetting
+      const markersLayer = L.layerGroup().addTo(map);
+
+      // Geocoding function using Nominatim API
+      async function getCoordinates(postcode) {
+        const response = await fetch(
+          `https://nominatim.openstreetmap.org/search?format=json&q=${postcode}`
+        );
+        const data = await response.json();
+        if (data.length > 0) {
+          return [parseFloat(data[0].lat), parseFloat(data[0].lon)];
+        } else {
+          throw new Error(
+            `Could not find coordinates for postcode: ${postcode}`
+          );
         }
+      }
 
-        // Calculate distance using Haversine formula
-        function calculateDistance(coord1, coord2) {
-            const [lat1, lon1] = coord1;
-            const [lat2, lon2] = coord2;
-            const R = 6371; // Earth's radius in km
-            const dLat = (lat2 - lat1) * (Math.PI / 180);
-            const dLon = (lon2 - lon1) * (Math.PI / 180);
-            const a =
-                Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-                Math.cos(lat1 * (Math.PI / 180)) *
-                    Math.cos(lat2 * (Math.PI / 180)) *
-                    Math.sin(dLon / 2) *
-                    Math.sin(dLon / 2);
-            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-            const distance = R * c * 0.621371; // Convert km to miles
-            return distance;
-        }
+      // Calculate distance between two coordinates
+      function calculateDistance(coords1, coords2) {
+        const R = 6371; // Radius of the Earth in kilometers
+        const toRad = (deg) => deg * (Math.PI / 180);
+        const dLat = toRad(coords2[0] - coords1[0]);
+        const dLon = toRad(coords2[1] - coords1[1]);
+        const lat1 = toRad(coords1[0]);
+        const lat2 = toRad(coords2[0]);
 
-        // Main function to calculate distances and display the map
-        async function calculateDistances() {
-            const requestPostcode = document.getElementById("requestPostcode").value.trim();
-            const volunteerPostcodes = document.getElementById("volunteerPostcodes").value.split(",").map(p => p.trim());
-            const requesterIcon = document.getElementById("requesterIcon").value.trim() || "red";
-            const volunteerIcon = document.getElementById("volunteerIcon").value.trim() || "blue";
+        const a =
+          Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+          Math.cos(lat1) *
+            Math.cos(lat2) *
+            Math.sin(dLon / 2) *
+            Math.sin(dLon / 2);
+        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+        return R * c * 0.621371; // Convert to miles
+      }
 
-            if (!requestPostcode || volunteerPostcodes.length === 0) {
-                alert("Please enter valid postcodes.");
-                return;
-            }
+      // Generate the map and display markers
+      document
+        .getElementById("generateMap")
+        .addEventListener("click", async () => {
+          // Clear previous markers
+          markersLayer.clearLayers();
 
-            try {
-                const requestCoords = await getCoordinates(requestPostcode);
-                const distances = [];
+          const requesterPostcode = document
+            .getElementById("requesterPostcode")
+            .value.trim();
+          const volunteerPostcodes = document
+            .getElementById("volunteerPostcodes")
+            .value.split("\n")
+            .map((p) => p.trim())
+            .filter((p) => p.length > 0);
 
-                for (const postcode of volunteerPostcodes) {
-                    try {
-                        const volunteerCoords = await getCoordinates(postcode);
-                        const distance = calculateDistance(requestCoords, volunteerCoords);
-                        distances.push({ postcode, distance, coords: volunteerCoords });
-                    } catch (error) {
-                        console.error(error.message);
-                    }
-                }
+          if (!requesterPostcode || volunteerPostcodes.length === 0) {
+            alert(
+              "Please enter both the requester postcode and at least one volunteer postcode."
+            );
+            return;
+          }
 
-                // Sort by distance
-                distances.sort((a, b) => a.distance - b.distance);
-
-                // Display distances in the table
-                displayDistances(distances);
-
-                // Display the map
-                displayMap(requestCoords, distances, requesterIcon, volunteerIcon);
-            } catch (error) {
-                console.error(`Error: ${error.message}`);
-            }
-        }
-
-        // Function to display distances in a table
-        function displayDistances(distances) {
-            const tableBody = document.getElementById("distanceTable");
-            tableBody.innerHTML = ""; // Clear previous results
-
-            distances.forEach(({ postcode, distance }) => {
-                const row = document.createElement("tr");
-                row.innerHTML = `
-                    <td>${postcode}</td>
-                    <td>${distance.toFixed(2)} miles</td>
-                `;
-                tableBody.appendChild(row);
-            });
-        }
-
-        // Function to display the map using Leaflet
-        function displayMap(requestCoords, distances, requesterIcon, volunteerIcon) {
-            const map = L.map("map").setView(requestCoords, 10);
-
-            L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-                attribution: '© OpenStreetMap contributors',
-            }).addTo(map);
-
-            // Add requester marker
-            L.marker(requestCoords, {
-                icon: L.icon({
-                    iconUrl: `https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-${requesterIcon}.png`,
-                    iconSize: [25, 41],
-                    iconAnchor: [12, 41],
-                    popupAnchor: [1, -34],
-                }),
+          try {
+            // Get requester's coordinates
+            const requesterCoords = await getCoordinates(requesterPostcode);
+            L.marker(requesterCoords, {
+              icon: L.icon({
+                iconUrl:
+                  "https://leafletjs.com/examples/custom-icons/leaf-red.png",
+                iconSize: [25, 41],
+                iconAnchor: [12, 41],
+              }),
             })
-                .bindPopup("Requester Location")
-                .addTo(map);
+              .bindPopup("Requester Location")
+              .addTo(markersLayer);
+
+            map.setView(requesterCoords, 10);
+
+            // Process volunteer postcodes
+            const distances = [];
+            for (const postcode of volunteerPostcodes) {
+              try {
+                const volunteerCoords = await getCoordinates(postcode);
+                const distance = calculateDistance(
+                  requesterCoords,
+                  volunteerCoords
+                );
+                distances.push({ postcode, distance, coords: volunteerCoords });
+              } catch (error) {
+                console.error(
+                  `Error fetching coordinates for ${postcode}:`,
+                  error.message
+                );
+              }
+            }
+
+            // Sort volunteers by distance
+            distances.sort((a, b) => a.distance - b.distance);
 
             // Add volunteer markers
             distances.forEach(({ postcode, distance, coords }) => {
-                L.marker(coords, {
-                    icon: L.icon({
-                        iconUrl: `https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-${volunteerIcon}.png`,
-                        iconSize: [25, 41],
-                        iconAnchor: [12, 41],
-                        popupAnchor: [1, -34],
-                    }),
-                })
-                    .bindPopup(`${postcode}: ${distance.toFixed(2)} miles`)
-                    .addTo(map);
+              const color =
+                distance <= 5 ? "green" : distance <= 15 ? "orange" : "red";
+              L.circleMarker(coords, {
+                radius: 8,
+                color,
+                fillColor: color,
+                fillOpacity: 0.7,
+              })
+                .bindPopup(`${postcode}: ${distance.toFixed(2)} miles`)
+                .addTo(markersLayer);
             });
-        }
+
+            console.log("Distances:", distances);
+            alert("Map generated successfully!");
+          } catch (error) {
+            console.error("Error:", error.message);
+            alert("Failed to generate the map. Please check the input.");
+          }
+        });
     </script>
-    <footer>
-        <p>Author: AM</p>
-        <p><a href="mailto:Abolfazl.m@live.com">Abolfazl.m@live.com</a></p>
-      </footer>
-</body>
+  </body>
 </html>
