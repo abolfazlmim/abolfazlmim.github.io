@@ -19,7 +19,6 @@
       .container {
         max-width: 700px;
         margin: 20px auto;
-        text-align: center;
         padding: 20px;
         background: #f4f4f4;
         border-radius: 10px;
@@ -43,10 +42,34 @@
         background-color: #218838;
       }
       #map {
-        height: 700px; /* Increased map height */
+        height: 700px;
         margin-top: 20px;
         border-radius: 10px;
       }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 20px;
+      }
+      th,
+      td {
+        border: 1px solid #ddd;
+        padding: 10px;
+        text-align: left;
+      }
+      th {
+        background-color: #007bff;
+        color: white;
+      }
+      .close {
+        background-color: #d4edda;
+      } /* Green */
+      .medium {
+        background-color: #fff3cd;
+      } /* Orange */
+      .far {
+        background-color: #f8d7da;
+      } /* Red */
     </style>
   </head>
   <body>
@@ -69,6 +92,26 @@
       ><br />
 
       <button id="generateMap">Generate Map</button>
+    </div>
+
+    <!-- Distance Table -->
+    <div class="container">
+      <h2>Volunteer Distances</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Volunteer Postcode</th>
+            <th>Distance (miles)</th>
+          </tr>
+        </thead>
+        <tbody id="distanceTableBody">
+          <tr>
+            <td colspan="2">
+              No data yet. Click "Generate Map" to see distances.
+            </td>
+          </tr>
+        </tbody>
+      </table>
     </div>
 
     <div id="map"></div>
@@ -123,6 +166,7 @@
         .addEventListener("click", async () => {
           // Clear previous markers
           markersLayer.clearLayers();
+          document.getElementById("distanceTableBody").innerHTML = ""; // Clear table
 
           const requesterPostcode = document
             .getElementById("requesterPostcode")
@@ -177,22 +221,28 @@
             // Sort volunteers by distance
             distances.sort((a, b) => a.distance - b.distance);
 
-            // Add volunteer markers
+            // Populate the table & add volunteer markers
+            const tableBody = document.getElementById("distanceTableBody");
             distances.forEach(({ postcode, distance, coords }) => {
-              const color =
-                distance <= 5 ? "green" : distance <= 15 ? "orange" : "red";
+              const colorClass =
+                distance <= 5 ? "close" : distance <= 15 ? "medium" : "far";
+              tableBody.innerHTML += `<tr class="${colorClass}"><td>${postcode}</td><td>${distance.toFixed(
+                2
+              )} miles</td></tr>`;
+
               L.circleMarker(coords, {
                 radius: 8,
-                color,
-                fillColor: color,
+                color:
+                  colorClass === "close"
+                    ? "green"
+                    : colorClass === "medium"
+                    ? "orange"
+                    : "red",
                 fillOpacity: 0.7,
               })
                 .bindPopup(`${postcode}: ${distance.toFixed(2)} miles`)
                 .addTo(markersLayer);
             });
-
-            console.log("Distances:", distances);
-            alert("Map generated successfully!");
           } catch (error) {
             console.error("Error:", error.message);
             alert("Failed to generate the map. Please check the input.");
