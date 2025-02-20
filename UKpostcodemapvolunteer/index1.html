@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Volunteer Distance Calculator (Developed by AM)</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        #map {
+            height: 500px;
+            margin-top: 20px;
+        }
+        .input-group {
+            margin-bottom: 10px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+        }
+        input, select {
+            width: 100%;
+            padding: 8px;
+            box-sizing: border-box;
+        }
+        button {
+            padding: 10px 20px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        #results {
+            margin-top: 20px;
+        }
+        #results table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        #results th, #results td {
+            padding: 10px;
+            border: 1px solid #ddd;
+            text-align: left;
+        }
+        #results th {
+            background-color: #f4f4f4;
+        }
+        #loading {
+            margin-top: 10px;
+            font-style: italic;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <h1>Volunteer Distance Calculator</h1>
+    <div class="input-group">
+        <label for="requestPostcode">Requester Postcode:</label>
+        <input type="text" id="requestPostcode" placeholder="Enter requester postcode">
+    </div>
+    <div class="input-group">
+        <label for="volunteerPostcodes">Volunteer Postcodes (comma-separated):</label>
+        <input type="text" id="volunteerPostcodes" placeholder="E.g., E1 6AN, W1A 1AA">
+    </div>
+    <div class="input-group">
+        <label for="requesterIcon">Requester Marker Color:</label>
+        <select id="requesterIcon">
+            <option value="red">Red</option>
+            <option value="green">Green</option>
+            <option value="blue">Blue</option>
+            <option value="purple">Purple</option>
+        </select>
+    </div>
+    <div class="input-group">
+        <label for="volunteerIcon">Volunteer Marker Color:</label>
+        <select id="volunteerIcon">
+            <option value="blue">Blue</option>
+            <option value="green">Green</option>
+            <option value="red">Red</option>
+            <option value="purple">Purple</option>
+        </select>
+    </div>
+    <button id="calculateButton" onclick="calculateDistances()">Calculate Distances</button>
+    <p id="loading">Calculating distances...</p>
+    <div id="results">
+        <h2>Distances</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Postcode</th>
+                    <th>Distance (miles)</th>
+                </tr>
+            </thead>
+            <tbody id="distanceTable">
+                <!-- Distances will be populated here -->
+            </tbody>
+        </table>
+    </div>
+    <div id="map"></div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+        // Geocoding function using Nominatim API
+        async function getCoordinates(postcode) {
+            const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(postcode)}&format=json&limit=1`;
+            const response = await fetch(url);
+            if (!response.ok) {
+                throw new Error(`API error: ${response.statusText}`);
+            }
+            const data = await response.json();
+            if (data.length > 0) {
+                return [parseFloat(data[0].lat), parseFloat(data[0].lon)];
+            } else {
+                throw new Error(`Could not find coordinates for postcode: ${postcode}`);
+            }
+        }
+
+        // Calculate distance using Haversine formula
+        function calculateDistance(coord1, coord2) {
+            const [lat1, lon1] = coord1;
+            const [lat2, lon2] = coord2;
+            const R = 6371; // Earth's radius in km
+            const dLat = (lat2 - lat1) * (Math.PI / 180);
+            const dLon = (lon2 - lon1) * (Math.PI / 180);
+            const a =
+                Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                Math.cos(lat1 * (Math.PI / 180)) *
+                    Math.cos(lat2 * (Math.PI / 180)) *
+                    Math.sin(dLon / 2) *
+                    Math.sin(dLon / 2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+            const distance = R * c * 0.621371; // Convert km to miles
+            return distance;
+        }
+
+        // Main function to calculate distances and display the map
+        async function calculateDistances() {
+            const button = document.getElementById("calculateButton");
+            button.disabled = true;
+            document.getElementById("loading").style.display = "block";
+
+            try {
+                const requestPostcode = document.getElementById("requestPostcode").value.trim();
+                const volunteerPostcodes = document.getElementById("volunteerPostcodes").value.split(",").map(p => p.trim());
+                const requesterIcon = document.getElementById("requesterIcon").value;
+                const volunteerIcon = document.getElementById("volunteerIcon").value;
+
+                if (!requestPostcode || volunteerPostcodes.length === 0) {
+                    alert("Please enter valid postcodes.");
+                    return;
+                }
+
+                const requestCoords = await getCoordinates(requestPostcode);
+
+                const volunteerPromises = volunteerPostcodes.map(async (postcode) => {
+                    try {
+                        const coords = await getCoordinates(postcode);
+                        const distance = calculateDistance(requestCoords, coords);
+                        return { postcode, distance, coords };
+                    } catch (error) {
+                        console.error(error.message);
+                        return null;
+                    }
+                });
+
+                const results = await Promise.all(volunteerPromises);
+                const distances = results.filter(result => result !== null);
+                const failedPostcodes = volunteerPostcodes.filter((_, index) => results[index] === null);
+
+                if (failedPostcodes.length > 0) {
+                    alert(`Could not find coordinates for the following postcodes: ${failedPostcodes.join(", ")}`);
+                }
+
+                distances.sort((a, b) => a.distance - b.distance);
+                displayDistances(distances);
+                displayMap(requestCoords, distances, requesterIcon, volunteerIcon);
+            } catch (error) {
+                alert(`Error: ${error.message}`);
+            } finally {
+                button.disabled = false;
+                document.getElementById("loading").style.display = "none";
+            }
+        }
+
+        // Function to display distances in a table
+        function displayDistances(distances) {
+            const tableBody = document.getElementById("distanceTable");
+            tableBody.innerHTML = ""; // Clear previous results
+
+            distances.forEach(({ postcode, distance }) => {
+                const row = document.createElement("tr");
+                row.innerHTML = `
+                    <td>${postcode}</td>
+                    <td>${distance.toFixed(2)} miles</td>
+                `;
+                tableBody.appendChild(row);
+            });
+        }
+
+        // Function to display the map using Leaflet
+        function displayMap(requestCoords, distances, requesterIcon, volunteerIcon) {
+            const map = L.map("map");
+
+            L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+                attribution: '© OpenStreetMap contributors',
+            }).addTo(map);
+
+            L.marker(requestCoords, {
+                icon: L.icon({
+                    iconUrl: `https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-${requesterIcon}.png`,
+                    iconSize: [25, 41],
+                    iconAnchor: [12, 41],
+                    popupAnchor: [1, -34],
+                }),
+            })
+                .bindPopup("Requester Location")
+                .addTo(map);
+
+            distances.forEach(({ postcode, distance, coords }) => {
+                L.marker(coords, {
+                    icon: L.icon({
+                        iconUrl: `https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-${volunteerIcon}.png`,
+                        iconSize: [25, 41],
+                        iconAnchor: [12, 41],
+                        popupAnchor: [1, -34],
+                    }),
+                })
+                    .bindPopup(`${postcode}: ${distance.toFixed(2)} miles`)
+                    .addTo(map);
+            });
+
+            const allCoords = [requestCoords, ...distances.map(d => d.coords)];
+            if (allCoords.length > 0) {
+                const bounds = L.latLngBounds(allCoords);
+                map.fitBounds(bounds);
+            } else {
+                map.setView(requestCoords, 10);
+            }
+        }
+    </script>
+    <footer>
+        <p>Author: AM</p>
+        <p><a href="mailto:Abolfazl.m@live.com">Abolfazl.m@live.com</a></p>
+    </footer>
+</body>
+</html>
