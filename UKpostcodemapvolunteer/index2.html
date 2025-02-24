@@ -1,0 +1,876 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Volunteer Distance Calculator</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+        /* CSS styles (unchanged from your original code) */
+        :root {
+            --primary-color: #3498db;
+            --secondary-color: #2980b9;
+            --accent-color: #e74c3c;
+            --light-color: #f5f5f5;
+            --dark-color: #333;
+            --success-color: #2ecc71;
+            --border-radius: 6px;
+            --box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: var(--dark-color);
+            background-color: #f9f9f9;
+            padding: 0;
+            margin: 0;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        header {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 20px;
+            margin-bottom: 30px;
+            box-shadow: var(--box-shadow);
+        }
+
+        h1 {
+            margin: 0;
+            font-size: 2rem;
+        }
+
+        .app-description {
+            margin-top: 5px;
+            opacity: 0.9;
+        }
+
+        .app-container {
+            display: grid;
+            grid-template-columns: 1fr 2fr;
+            gap: 20px;
+        }
+
+        @media (max-width: 768px) {
+            .app-container {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .panel {
+            background-color: white;
+            border-radius: var(--border-radius);
+            padding: 20px;
+            box-shadow: var(--box-shadow);
+            margin-bottom: 20px;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+
+        input, select, textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: var(--border-radius);
+            font-size: 1rem;
+            transition: border 0.3s ease;
+        }
+
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: var(--primary-color);
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        button {
+            padding: 10px 20px;
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: var(--border-radius);
+            cursor: pointer;
+            font-size: 1rem;
+            transition: background-color 0.3s ease;
+            flex: 1;
+        }
+
+        button:hover {
+            background-color: var(--secondary-color);
+        }
+
+        button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+
+        button.secondary {
+            background-color: #999;
+        }
+
+        button.secondary:hover {
+            background-color: #777;
+        }
+
+        #map {
+            height: 500px;
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+        }
+
+        .results-section {
+            margin-top: 20px;
+        }
+
+        #results {
+            overflow-x: auto;
+        }
+
+        #results table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 15px;
+        }
+
+        #results th, #results td {
+            padding: 12px;
+            border: 1px solid #ddd;
+            text-align: left;
+        }
+
+        #results th {
+            background-color: #f4f4f4;
+            font-weight: 600;
+        }
+
+        #results tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+
+        #results tr.closest {
+            background-color: rgba(46, 204, 113, 0.2);
+        }
+
+        .alert {
+            padding: 10px 15px;
+            margin-bottom: 15px;
+            border-radius: var(--border-radius);
+            background-color: #f8d7da;
+            color: #721c24;
+            display: none;
+        }
+
+        .alert.success {
+            background-color: #d4edda;
+            color: #155724;
+        }
+
+        #loading {
+            margin-top: 15px;
+            display: flex;
+            align-items: center;
+            display: none;
+        }
+
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid var(--primary-color);
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            animation: spin 1s linear infinite;
+            margin-right: 10px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        footer {
+            margin-top: 40px;
+            padding: 20px;
+            text-align: center;
+            border-top: 1px solid #eee;
+            color: #666;
+        }
+
+        .footer-links {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-top: 10px;
+        }
+
+        .footer-links a {
+            color: var(--primary-color);
+            text-decoration: none;
+        }
+
+        .tab-container {
+            margin-bottom: 20px;
+        }
+
+        .tab-buttons {
+            display: flex;
+            border-bottom: 1px solid #ddd;
+            margin-bottom: 15px;
+        }
+
+        .tab-button {
+            padding: 10px 20px;
+            background: transparent;
+            border: none;
+            border-bottom: 2px solid transparent;
+            color: #666;
+            cursor: pointer;
+        }
+
+        .tab-button.active {
+            border-bottom: 2px solid var(--primary-color);
+            color: var(--primary-color);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .info-box {
+            background-color: rgba(52, 152, 219, 0.1);
+            border-left: 4px solid var(--primary-color);
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 0 var(--border-radius) var(--border-radius) 0;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 50px;
+            font-size: 0.75rem;
+            font-weight: bold;
+            margin-left: 5px;
+        }
+
+        .badge-success {
+            background-color: var(--success-color);
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container">
+            <h1>Volunteer Distance Calculator</h1>
+            <p class="app-description">Find the closest volunteers to your requester based on postcodes</p>
+        </div>
+    </header>
+
+    <div class="container">
+        <div class="alert" id="alertBox"></div>
+
+        <div class="tab-container">
+            <div class="tab-buttons">
+                <button class="tab-button active" data-tab="calculator">Calculator</button>
+                <button class="tab-button" data-tab="about">About</button>
+                <button class="tab-button" data-tab="help">Help</button>
+            </div>
+
+            <div class="tab-content active" id="calculator">
+                <div class="app-container">
+                    <div class="left-column">
+                        <div class="panel">
+                            <h2>Input Information</h2>
+                            <div class="form-group">
+                                <label for="requestPostcode">Requester Postcode:</label>
+                                <input type="text" id="requestPostcode" placeholder="e.g., NW1 6XE" autocomplete="off">
+                            </div>
+                            <div class="form-group">
+                                <label for="volunteerPostcodes">Volunteer Postcodes:</label>
+                                <textarea id="volunteerPostcodes" rows="4" placeholder="Enter one postcode per line or comma-separated list"></textarea>
+                            </div>
+                            <div class="form-group">
+                                <label for="maxDistance">Maximum Distance (miles):</label>
+                                <input type="number" id="maxDistance" min="0" step="0.1" value="10">
+                            </div>
+                            <div class="form-group">
+                                <label for="transportMethod">Transport Method:</label>
+                                <select id="transportMethod">
+                                    <option value="driving">Driving</option>
+                                    <option value="walking">Walking</option>
+                                    <option value="bicycling">Bicycling</option>
+                                    <option value="straight">Straight Line</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="requesterIcon">Requester Marker Color:</label>
+                                <select id="requesterIcon">
+                                    <option value="red">Red</option>
+                                    <option value="green">Green</option>
+                                    <option value="blue">Blue</option>
+                                    <option value="purple">Purple</option>
+                                    <option value="orange">Orange</option>
+                                    <option value="yellow">Yellow</option>
+                                    <option value="black">Black</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="volunteerIcon">Volunteer Marker Color:</label>
+                                <select id="volunteerIcon">
+                                    <option value="blue">Blue</option>
+                                    <option value="green">Green</option>
+                                    <option value="red">Red</option>
+                                    <option value="purple">Purple</option>
+                                    <option value="orange">Orange</option>
+                                    <option value="yellow">Yellow</option>
+                                    <option value="black">Black</option>
+                                </select>
+                            </div>
+                            <div class="button-group">
+                                <button id="calculateButton" onclick="calculateDistances()">Calculate Distances</button>
+                                <button id="clearButton" class="secondary" onclick="clearForm()">Clear</button>
+                            </div>
+                            <div id="loading">
+                                <div class="spinner"></div>
+                                <span>Calculating distances...</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="right-column">
+                        <div class="panel">
+                            <div id="map"></div>
+                            <div class="results-section">
+                                <div id="summary"></div>
+                                <div id="results">
+                                    <h2>Distances</h2>
+                                    <table>
+                                        <thead>
+                                            <tr>
+                                                <th>Postcode</th>
+                                                <th>Distance</th>
+                                                <th>Travel Time</th>
+                                                <th>Action</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="distanceTable">
+                                            <!-- Distances will be populated here -->
+                                        </tbody>
+                                    </table>
+                                    <button id="exportButton" style="display: none;" onclick="exportResults()">Export Results (CSV)</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="tab-content" id="about">
+                <div class="panel">
+                    <h2>About This Tool</h2>
+                    <div class="info-box">
+                        <p>The Volunteer Distance Calculator helps match volunteers with people who need assistance based on their proximity. Simply enter the postcode of the person requesting help and a list of volunteer postcodes to find the closest matches.</p>
+                    </div>
+                    <h3>Features</h3>
+                    <ul style="padding-left: 20px; margin-bottom: 20px;">
+                        <li>Calculate distances between a requester and multiple volunteers</li>
+                        <li>Choose different transportation methods</li>
+                        <li>Set maximum distance thresholds</li>
+                        <li>Visualize locations on an interactive map</li>
+                        <li>Export results in CSV format</li>
+                    </ul>
+                    <h3>How It Works</h3>
+                    <p>This tool uses the Nominatim API to convert postcodes into geographical coordinates. Then, depending on the transport method selected:</p>
+                    <ul style="padding-left: 20px; margin-bottom: 20px;">
+                        <li>For "Straight Line" method, it calculates distances using the Haversine formula</li>
+                        <li>For other transport methods, it estimates travel distances and times based on the selected mode</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="tab-content" id="help">
+                <div class="panel">
+                    <h2>How to Use This Tool</h2>
+                    <ol style="padding-left: 20px; margin-bottom: 20px;">
+                        <li>Enter the requester's postcode in the "Requester Postcode" field</li>
+                        <li>Enter volunteer postcodes in the "Volunteer Postcodes" field (one per line or comma-separated)</li>
+                        <li>Set a maximum distance radius if desired</li>
+                        <li>Choose a transportation method</li>
+                        <li>Customize marker colors if needed</li>
+                        <li>Click "Calculate Distances"</li>
+                    </ol>
+                    <h3>Troubleshooting</h3>
+                    <p>If you encounter any issues:</p>
+                    <ul style="padding-left: 20px; margin-bottom: 20px;">
+                        <li>Ensure all postcodes are valid and correctly formatted</li>
+                        <li>Try refreshing the page if the map doesn't load properly</li>
+                        <li>Some locations may not be found if the postcode is very new or not in the database</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        <div class="container">
+            <p>Volunteer Distance Calculator © 2025</p>
+            <div class="footer-links">
+                <a href="#">Privacy Policy</a>
+                <a href="#">Terms of Use</a>
+                <a href="mailto:support@volunteercalculator.org">Contact</a>
+            </div>
+        </div>
+    </footer>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+        // Global variables
+        let map;
+        let markers = [];
+        let polylines = [];
+        let travelTimeCache = {};
+        let currentResults = [];
+
+        // Initialize the map
+        function initMap() {
+            if (map) {
+                map.remove();
+            }
+            
+            map = L.map('map').setView([54.5, -4], 6); // Default to UK view
+            
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap contributors'
+            }).addTo(map);
+            
+            return map;
+        }
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            initMap();
+            setupTabNavigation();
+            
+            // Set up event listeners for Enter key
+            document.getElementById('requestPostcode').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    calculateDistances();
+                }
+            });
+            
+            document.getElementById('volunteerPostcodes').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter' && e.ctrlKey) {
+                    calculateDistances();
+                }
+            });
+        });
+
+        // Tab navigation
+        function setupTabNavigation() {
+            const tabButtons = document.querySelectorAll('.tab-button');
+            
+            tabButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    const tabId = this.getAttribute('data-tab');
+                    
+                    // Remove active class from all buttons and content
+                    document.querySelectorAll('.tab-button').forEach(btn => {
+                        btn.classList.remove('active');
+                    });
+                    
+                    document.querySelectorAll('.tab-content').forEach(content => {
+                        content.classList.remove('active');
+                    });
+                    
+                    // Add active class to current button and content
+                    this.classList.add('active');
+                    document.getElementById(tabId).classList.add('active');
+                });
+            });
+        }
+
+        // Geocoding function using Nominatim API
+        async function getCoordinates(postcode) {
+            // Add UK if not specified to improve results
+            if (!postcode.toLowerCase().includes('uk') && !postcode.toLowerCase().includes('united kingdom')) {
+                postcode = `${postcode}, UK`;
+            }
+            
+            const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(postcode)}&format=json&limit=1`;
+            
+            try {
+                const response = await fetch(url);
+                
+                if (!response.ok) {
+                    throw new Error(`API error: ${response.statusText}`);
+                }
+                
+                const data = await response.json();
+                
+                if (data.length > 0) {
+                    return {
+                        lat: parseFloat(data[0].lat),
+                        lon: parseFloat(data[0].lon),
+                        display_name: data[0].display_name
+                    };
+                } else {
+                    throw new Error(`Could not find coordinates for postcode: ${postcode}`);
+                }
+            } catch (error) {
+                console.error('Error in getCoordinates:', error);
+                throw error;
+            }
+        }
+
+        // Calculate distance using Haversine formula (straight line)
+        function calculateHaversineDistance(coord1, coord2) {
+            const R = 6371; // Earth's radius in km
+            const dLat = (coord2.lat - coord1.lat) * (Math.PI / 180);
+            const dLon = (coord2.lon - coord1.lon) * (Math.PI / 180);
+            const a =
+                Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                Math.cos(coord1.lat * (Math.PI / 180)) *
+                Math.cos(coord2.lat * (Math.PI / 180)) *
+                Math.sin(dLon / 2) *
+                Math.sin(dLon / 2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+            const distance = R * c * 0.621371; // Convert km to miles
+            
+            return {
+                distance: distance,
+                time: estimateTravelTime(distance, 'straight')
+            };
+        }
+
+        // Estimate travel time based on distance and transport method
+        function estimateTravelTime(distance, method) {
+            // Average speeds in mph
+            const speeds = {
+                'driving': 30,
+                'walking': 3,
+                'bicycling': 10,
+                'straight': 30
+            };
+            
+            const speed = speeds[method] || speeds.driving;
+            const timeHours = distance / speed;
+            
+            return formatTime(timeHours * 60); // Convert to minutes
+        }
+
+        // Format time in minutes to a readable string
+        function formatTime(minutes) {
+            if (minutes < 1) {
+                return 'Less than 1 min';
+            } else if (minutes < 60) {
+                return `${Math.round(minutes)} min`;
+            } else {
+                const hours = Math.floor(minutes / 60);
+                const mins = Math.round(minutes % 60);
+                return `${hours} hr${hours > 1 ? 's' : ''} ${mins} min`;
+            }
+        }
+
+        // Parse volunteer postcodes from input
+        function parseVolunteerPostcodes(input) {
+            // First try splitting by newline
+            let postcodes = input.split('\n').map(p => p.trim()).filter(p => p);
+            
+            // If there's only one line, try splitting by comma
+            if (postcodes.length === 1 && postcodes[0].includes(',')) {
+                postcodes = postcodes[0].split(',').map(p => p.trim()).filter(p => p);
+            }
+            
+            return postcodes;
+        }
+
+        // Clear the map markers and polylines
+        function clearMap() {
+            markers.forEach(marker => map.removeLayer(marker));
+            markers = [];
+            
+            polylines.forEach(line => map.removeLayer(line));
+            polylines = [];
+        }
+
+        // Show alert message
+        function showAlert(message, type = 'error') {
+            const alertBox = document.getElementById('alertBox');
+            alertBox.textContent = message;
+            alertBox.style.display = 'block';
+            
+            if (type === 'success') {
+                alertBox.classList.add('success');
+            } else {
+                alertBox.classList.remove('success');
+            }
+            
+            setTimeout(() => {
+                alertBox.style.display = 'none';
+            }, 5000);
+        }
+
+        // Clear the form
+        function clearForm() {
+            document.getElementById('requestPostcode').value = '';
+            document.getElementById('volunteerPostcodes').value = '';
+            document.getElementById('maxDistance').value = '10';
+            document.getElementById('distanceTable').innerHTML = '';
+            document.getElementById('summary').innerHTML = '';
+            document.getElementById('exportButton').style.display = 'none';
+            clearMap();
+            initMap();
+        }
+
+        // Export results to CSV
+        function exportResults() {
+            if (currentResults.length === 0) {
+                showAlert('No results to export.');
+                return;
+            }
+            
+            let csvContent = 'data:text/csv;charset=utf-8,';
+            
+            // Add header
+            csvContent += 'Postcode,Distance (miles),Travel Time,Location\n';
+            
+            // Add rows
+            currentResults.forEach(result => {
+                csvContent += `${result.postcode},${result.distance.toFixed(2)},"${result.time}","${result.display_name}"\n`;
+            });
+            
+            // Create download link
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement('a');
+            link.setAttribute('href', encodedUri);
+            link.setAttribute('download', 'volunteer_distances.csv');
+            document.body.appendChild(link);
+            
+            // Trigger download
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        // Display results in the table
+        function displayResults(filteredResults, allResults, maxDistance) {
+            const tableBody = document.getElementById('distanceTable');
+            const summaryDiv = document.getElementById('summary');
+            tableBody.innerHTML = '';
+            
+            if (filteredResults.length === 0) {
+                tableBody.innerHTML = `<tr><td colspan="4">No volunteers found within ${maxDistance} miles</td></tr>`;
+                summaryDiv.innerHTML = '';
+                document.getElementById('exportButton').style.display = 'none';
+                return;
+            }
+            
+            // Display summary
+            summaryDiv.innerHTML = `
+                <div class="info-box" style="margin-top: 20px; margin-bottom: 20px;">
+                    <h3>Summary</h3>
+                    <p>Found ${filteredResults.length} volunteers within ${maxDistance} miles radius (out of ${allResults.length} total)</p>
+                    <p>Closest volunteer: ${filteredResults[0].postcode} (${filteredResults[0].distance.toFixed(2)} miles)</p>
+                    <p>Average distance: ${(filteredResults.reduce((sum, r) => sum + r.distance, 0) / filteredResults.length).toFixed(2)} miles</p>
+                </div>
+            `;
+            
+            // Build table rows
+            filteredResults.forEach((result, index) => {
+                const row = document.createElement('tr');
+                if (index === 0) row.classList.add('closest');
+                
+                row.innerHTML = `
+                    <td>${result.postcode} ${index === 0 ? '<span class="badge badge-success">Closest</span>' : ''}</td>
+                    <td>${result.distance.toFixed(2)} miles</td>
+                    <td>${result.time}</td>
+                    <td><button class="small-btn" onclick="centerMapOn(${result.coords.lat}, ${result.coords.lon})">View on Map</button></td>
+                `;
+                
+                tableBody.appendChild(row);
+            });
+            
+            // Show export button
+            document.getElementById('exportButton').style.display = 'block';
+        }
+        
+        // Center map on specific coordinates
+        function centerMapOn(lat, lon) {
+            map.setView([lat, lon], 13);
+            
+            // Find the marker at this position and open its popup
+            markers.forEach(marker => {
+                const position = marker.getLatLng();
+                if (position.lat === lat && position.lng === lon) {
+                    marker.openPopup();
+                }
+            });
+        }
+
+        // Main function to calculate distances
+        async function calculateDistances() {
+            const button = document.getElementById('calculateButton');
+            button.disabled = true;
+            document.getElementById('loading').style.display = 'flex';
+            clearMap();
+            
+            try {
+                // Get inputs
+                const requestPostcode = document.getElementById('requestPostcode').value.trim();
+                const volunteerPostcodesInput = document.getElementById('volunteerPostcodes').value.trim();
+                const maxDistance = parseFloat(document.getElementById('maxDistance').value) || Infinity;
+                const transportMethod = document.getElementById('transportMethod').value;
+                const requesterIcon = document.getElementById('requesterIcon').value;
+                const volunteerIcon = document.getElementById('volunteerIcon').value;
+                
+                // Validate inputs
+                if (!requestPostcode) {
+                    throw new Error('Please enter a requester postcode.');
+                }
+                
+                if (!volunteerPostcodesInput) {
+                    throw new Error('Please enter at least one volunteer postcode.');
+                }
+                
+                // Parse volunteer postcodes
+                const volunteerPostcodes = parseVolunteerPostcodes(volunteerPostcodesInput);
+                
+                if (volunteerPostcodes.length === 0) {
+                    throw new Error('No valid volunteer postcodes found.');
+                }
+                
+                // Initialize map
+                map = initMap();
+                
+                // Get requester coordinates
+                const requesterCoords = await getCoordinates(requestPostcode);
+                
+                // Add requester marker
+                const requesterMarker = L.marker([requesterCoords.lat, requesterCoords.lon], {
+                    icon: L.icon({
+                        iconUrl: `https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-${requesterIcon}.png`,
+                        iconSize: [25, 41],
+                        iconAnchor: [12, 41],
+                        popupAnchor: [1, -34],
+                        shadowUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-shadow.png',
+                        shadowSize: [41, 41],
+                        shadowAnchor: [12, 41]
+                    })
+                }).addTo(map);
+                
+                requesterMarker.bindPopup(`<strong>Requester</strong><br>${requesterCoords.display_name}`);
+                markers.push(requesterMarker);
+                
+                // Process volunteer postcodes
+                const volunteerPromises = volunteerPostcodes.map(async (postcode) => {
+                    try {
+                        const coords = await getCoordinates(postcode);
+                        
+                        // Calculate distance based on transport method
+                        const result = calculateHaversineDistance(requesterCoords, coords);
+                        
+                        return {
+                            postcode,
+                            distance: result.distance,
+                            time: result.time,
+                            coords,
+                            display_name: coords.display_name
+                        };
+                    } catch (error) {
+                        console.error(`Error processing ${postcode}:`, error.message);
+                        return null;
+                    }
+                });
+                
+                const results = await Promise.all(volunteerPromises);
+                const validResults = results.filter(result => result !== null);
+                const failedPostcodes = volunteerPostcodes.filter((postcode, index) => results[index] === null);
+                
+                if (failedPostcodes.length > 0) {
+                    showAlert(`Could not find coordinates for: ${failedPostcodes.join(", ")}`);
+                }
+                
+                if (validResults.length === 0) {
+                    throw new Error('No valid volunteer postcodes could be processed.');
+                }
+                
+                // Sort by distance
+                validResults.sort((a, b) => a.distance - b.distance);
+                currentResults = validResults;
+                
+                // Filter by max distance if set
+                const filteredResults = validResults.filter(result => result.distance <= maxDistance);
+                
+                // Add markers for volunteers
+                filteredResults.forEach((result, index) => {
+                    const marker = L.marker([result.coords.lat, result.coords.lon], {
+                        icon: L.icon({
+                            iconUrl: `https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-${volunteerIcon}.png`,
+                            iconSize: [25, 41],
+                            iconAnchor: [12, 41],
+                            popupAnchor: [1, -34],
+                            shadowUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-shadow.png',
+                            shadowSize: [41, 41],
+                            shadowAnchor: [12, 41]
+                        })
+                    }).addTo(map);
+                    
+                    marker.bindPopup(`<strong>${result.postcode}</strong><br>Distance: ${result.distance.toFixed(2)} miles<br>Est. travel time: ${result.time}<br>${result.display_name}`);
+                    markers.push(marker);
+                    
+                    // Add line connecting requester to volunteer
+                    const polyline = L.polyline([
+                        [requesterCoords.lat, requesterCoords.lon],
+                        [result.coords.lat, result.coords.lon]
+                    ], {
+                        color: '#3498db',
+                        weight: 2
+                    }).addTo(map);
+                    
+                    polylines.push(polyline);
+                });
+                
+                // Display results
+                displayResults(filteredResults, validResults, maxDistance);
+                
+                // Adjust map view to fit all markers
+                const bounds = L.latLngBounds(markers.map(marker => marker.getLatLng()));
+                map.fitBounds(bounds);
+            } catch (error) {
+                console.error('Error in calculateDistances:', error);
+                showAlert(error.message);
+            } finally {
+                button.disabled = false;
+                document.getElementById('loading').style.display = 'none';
+            }
+        }
+    </script>
+</body>
+</html>
