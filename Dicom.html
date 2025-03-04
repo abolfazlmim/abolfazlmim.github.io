@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DICOM Viewer</title>
+    <script src="https://unpkg.com/cornerstone-core@latest"></script>
+    <script src="https://unpkg.com/cornerstone-wado-image-loader@latest"></script>
+    <script src="https://unpkg.com/cornerstone-web-image-loader@latest"></script>
+    <script src="https://unpkg.com/dicom-parser@latest"></script>
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            text-align: center; 
+            background-color: #f4f4f4; 
+            margin: 0; 
+            padding: 0;
+        }
+        h2 {
+            color: #333;
+            margin-top: 20px;
+        }
+        #dropzone { 
+            width: 60%; 
+            margin: 20px auto; 
+            padding: 30px; 
+            border: 2px dashed #007bff; 
+            background-color: #e9f5ff; 
+            cursor: pointer; 
+            border-radius: 10px;
+            transition: background-color 0.3s ease-in-out;
+        }
+        #dropzone:hover {
+            background-color: #d0ebff;
+        }
+        input[type="file"] {
+            display: none;
+        }
+        label {
+            display: block;
+            font-weight: bold;
+            color: #007bff;
+            cursor: pointer;
+        }
+        #dicomImage {
+            width: 512px; 
+            height: 512px; 
+            border: 1px solid black; 
+            margin: 20px auto;
+            background-color: #000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            border-radius: 8px;
+            box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2);
+        }
+        #metadata {
+            text-align: left; 
+            max-width: 80%; 
+            margin: 20px auto; 
+            background: white; 
+            padding: 15px; 
+            border-radius: 8px;
+            box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
+            overflow-y: auto;
+            max-height: 300px;
+            white-space: pre-wrap;
+        }
+    </style>
+</head>
+<body>
+    <h2>DICOM Viewer</h2>
+    <div id="dropzone">Drag & Drop DICOM File Here or <label for="fileInput">Click to Upload</label><input type="file" id="fileInput"></div>
+    <div id="dicomImage"></div>
+    <pre id="metadata"></pre>
+
+    <script>
+        cornerstoneWADOImageLoader.external.cornerstone = cornerstone;
+        cornerstoneWADOImageLoader.configure({
+            beforeSend: function(xhr) {
+                xhr.setRequestHeader('Accept', 'image/dicom');
+            }
+        });
+
+        const dropzone = document.getElementById('dropzone');
+        const fileInput = document.getElementById('fileInput');
+        const metadataContainer = document.getElementById('metadata');
+        const dicomImage = document.getElementById('dicomImage');
+        cornerstone.enable(dicomImage);
+
+        dropzone.addEventListener('dragover', (e) => { e.preventDefault(); });
+        dropzone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            handleFile(e.dataTransfer.files[0]);
+        });
+        fileInput.addEventListener('change', (e) => handleFile(e.target.files[0]));
+
+        function handleFile(file) {
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function (event) {
+                const arrayBuffer = event.target.result;
+                displayDicomImage(arrayBuffer);
+                displayMetadata(arrayBuffer);
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+        function displayDicomImage(arrayBuffer) {
+            const blob = new Blob([arrayBuffer], { type: 'application/dicom' });
+            const objectUrl = URL.createObjectURL(blob);
+            cornerstone.loadImage(`wadouri:${objectUrl}`).then(image => {
+                cornerstone.displayImage(dicomImage, image);
+            }).catch(error => console.error("Error loading image:", error));
+        }
+
+        function displayMetadata(arrayBuffer) {
+            try {
+                const dataSet = dicomParser.parseDicom(new Uint8Array(arrayBuffer));
+                let metadataText = '';
+                for (let tag in dataSet.elements) {
+                    metadataText += `${tag}: ${dataSet.string(tag) || dataSet.uint16(tag)}\n`;
+                }
+                metadataContainer.textContent = metadataText;
+            } catch (error) {
+                metadataContainer.textContent = "Error parsing metadata: " + error;
+            }
+        }
+    </script>
+</body>
+</html>
