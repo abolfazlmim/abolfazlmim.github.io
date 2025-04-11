@@ -1,0 +1,537 @@
+/* General Styles & Variables */
+:root {
+    /* Light Mode Colors */
+    --bg-color-light: #f8f9fa;
+    --text-color-light: #212529;
+    --primary-color-light: #007bff;
+    --secondary-color-light: #6c757d;
+    --card-bg-light: #ffffff;
+    --border-color-light: #dee2e6;
+    --link-color-light: #0056b3;
+    --icon-color-light: #495057;
+    --timeline-line-light: #dee2e6;
+    --shadow-light: 0 4px 8px rgba(0, 0, 0, 0.05);
+
+    /* Dark Mode Colors */
+    --bg-color-dark: #1a1a1a; /* Slightly lighter than pure black */
+    --text-color-dark: #e9ecef;
+    --primary-color-dark: #61dafb; /* A common tech dark mode accent */
+    --secondary-color-dark: #adb5bd;
+    --card-bg-dark: #2c2c2c; /* Darker card background */
+    --border-color-dark: #444;
+    --link-color-dark: #80bfff; /* Lighter blue for dark mode */
+    --icon-color-dark: #ced4da;
+    --timeline-line-dark: #555;
+    --shadow-dark: 0 5px 15px rgba(0, 0, 0, 0.2);
+
+    /* Transitions */
+    --transition-speed: 0.3s;
+
+    /* Typography */
+    --font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    --header-font: 'Georgia', serif; /* Example: Different font for headers */
+}
+
+/* Apply base styles using variables */
+body {
+    font-family: var(--font-family);
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    transition: background-color var(--transition-speed) ease, color var(--transition-speed) ease;
+    line-height: 1.6;
+}
+
+body.light-mode {
+    background-color: var(--bg-color-light);
+    color: var(--text-color-light);
+    --bg-color: var(--bg-color-light);
+    --text-color: var(--text-color-light);
+    --primary-color: var(--primary-color-light);
+    --secondary-color: var(--secondary-color-light);
+    --card-bg: var(--card-bg-light);
+    --border-color: var(--border-color-light);
+    --link-color: var(--link-color-light);
+    --icon-color: var(--icon-color-light);
+    --timeline-line: var(--timeline-line-light);
+    --shadow: var(--shadow-light);
+}
+
+body.dark-mode {
+    background-color: var(--bg-color-dark);
+    color: var(--text-color-dark);
+    --bg-color: var(--bg-color-dark);
+    --text-color: var(--text-color-dark);
+    --primary-color: var(--primary-color-dark);
+    --secondary-color: var(--secondary-color-dark);
+    --card-bg: var(--card-bg-dark);
+    --border-color: var(--border-color-dark);
+    --link-color: var(--link-color-dark);
+    --icon-color: var(--icon-color-dark);
+    --timeline-line: var(--timeline-line-dark);
+    --shadow: var(--shadow-dark);
+}
+
+*, *:before, *:after {
+    box-sizing: inherit;
+}
+
+.container {
+    max-width: 1000px;
+    margin: 2rem auto;
+    padding: 0 2rem;
+}
+
+.section {
+    margin-bottom: 4rem;
+    padding: 2rem;
+    background-color: var(--card-bg);
+    border-radius: 8px;
+    box-shadow: var(--shadow);
+    transition: background-color var(--transition-speed) ease, box-shadow var(--transition-speed) ease;
+    opacity: 0; /* Initially hidden for animation */
+    transform: translateY(20px); /* Start slightly lower */
+    transition: opacity 0.6s ease-out, transform 0.6s ease-out, background-color var(--transition-speed) ease, box-shadow var(--transition-speed) ease;
+}
+
+.section.visible {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+
+h1, h2, h3, h4, h5, h6 {
+    color: var(--primary-color);
+    font-family: var(--header-font);
+    margin-top: 0;
+    transition: color var(--transition-speed) ease;
+}
+
+h1 { font-size: 2.8em; margin-bottom: 0.2em; }
+h2 { font-size: 1.8em; color: var(--secondary-color); margin-bottom: 1em; }
+h3.section-title {
+    font-size: 2em;
+    border-bottom: 2px solid var(--primary-color);
+    padding-bottom: 0.5em;
+    margin-bottom: 1.5em;
+    display: inline-block;
+}
+
+a {
+    color: var(--link-color);
+    text-decoration: none;
+    transition: color var(--transition-speed) ease;
+}
+
+a:hover {
+    text-decoration: underline;
+    color: var(--primary-color);
+}
+
+p {
+    margin-bottom: 1em;
+}
+
+ul {
+    list-style: none;
+    padding-left: 0;
+}
+
+li {
+    margin-bottom: 0.5em;
+}
+
+i { /* Icon styling */
+    margin-right: 0.5em;
+    color: var(--icon-color);
+    transition: color var(--transition-speed) ease;
+    width: 1.2em; /* Ensure consistent icon spacing */
+    text-align: center;
+}
+
+/* Header */
+#header {
+    text-align: center;
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 2rem;
+}
+
+.contact-info p, .social-links a {
+    margin: 0.5em 0;
+    display: inline-block; /* For social links */
+    margin: 0 0.8em; /* Spacing for social links */
+}
+
+.social-links i {
+    font-size: 1.8em;
+    transition: transform 0.2s ease-in-out, color var(--transition-speed) ease;
+}
+
+.social-links a:hover i {
+    transform: scale(1.2);
+    color: var(--primary-color);
+}
+
+/* About Me */
+#about p {
+    font-size: 1.1em;
+}
+
+/* Work Experience - Timeline */
+.timeline {
+    position: relative;
+    padding-left: 30px; /* Space for the line and dots */
+}
+
+.timeline::before {
+    content: '';
+    position: absolute;
+    left: 10px;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background-color: var(--timeline-line);
+    transition: background-color var(--transition-speed) ease;
+}
+
+.timeline-item {
+    position: relative;
+    margin-bottom: 2rem;
+}
+
+.timeline-item::before { /* Timeline dots */
+    content: '';
+    position: absolute;
+    left: -25px; /* Adjust to align with the line */
+    top: 5px;
+    width: 12px;
+    height: 12px;
+    background-color: var(--primary-color);
+    border-radius: 50%;
+    border: 2px solid var(--bg-color); /* Creates a nice effect */
+    transition: background-color var(--transition-speed) ease, border-color var(--transition-speed) ease;
+    z-index: 1;
+}
+
+.timeline-content {
+    background-color: var(--bg-color); /* Slightly different bg for contrast */
+    padding: 1.5rem;
+    border-radius: 6px;
+    border: 1px solid var(--border-color);
+    transition: background-color var(--transition-speed) ease, border-color var(--transition-speed) ease;
+}
+
+.timeline-content h4 {
+    margin-bottom: 0.3em;
+    font-size: 1.3em;
+}
+
+.timeline-content h5 {
+    color: var(--secondary-color);
+    font-size: 1em;
+    margin-bottom: 1em;
+    font-weight: normal;
+}
+
+.timeline-content ul {
+    padding-left: 20px;
+    list-style: disc;
+}
+
+/* Projects */
+.projects-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1.5rem;
+}
+
+.project-card {
+    background-color: var(--bg-color);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 1.5rem;
+    transition: transform 0.3s ease, box-shadow 0.3s ease, background-color var(--transition-speed) ease, border-color var(--transition-speed) ease;
+    overflow: hidden; /* Ensure image fits */
+}
+
+.project-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15); /* Enhanced shadow on hover */
+}
+
+.project-card img {
+    width: 100%;
+    height: 180px; /* Fixed height for consistency */
+    object-fit: cover; /* Cover the area, might crop */
+    border-radius: 4px;
+    margin-bottom: 1rem;
+    border: 1px solid var(--border-color);
+}
+
+.project-card h4 {
+    margin-bottom: 0.5em;
+    color: var(--primary-color);
+}
+
+.project-card p {
+    font-size: 0.95em;
+    margin-bottom: 0.8em;
+}
+
+.project-card strong {
+    color: var(--secondary-color);
+}
+
+.project-links a {
+    margin-right: 1em;
+    font-size: 0.9em;
+    display: inline-block;
+    padding: 0.3em 0.8em;
+    border: 1px solid var(--primary-color);
+    border-radius: 4px;
+    transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.project-links a:hover {
+    background-color: var(--primary-color);
+    color: var(--bg-color); /* White or black depending on theme */
+    text-decoration: none;
+}
+
+/* Skills */
+.skills-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 2rem;
+}
+
+.skill-category h4 {
+    color: var(--primary-color);
+    margin-bottom: 1em;
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 0.5em;
+}
+
+.skill-category ul {
+    padding-left: 0;
+}
+
+.skill-category li {
+    margin-bottom: 0.8em;
+    display: flex;
+    align-items: center;
+}
+
+.skill-category i {
+    color: var(--primary-color); /* Make skill icons stand out */
+    font-size: 1.2em;
+    transition: transform 0.2s ease;
+}
+
+.skill-category li:hover i {
+    transform: scale(1.1);
+}
+
+/* Education */
+.education-item {
+    margin-bottom: 1.5rem;
+    padding-left: 10px;
+    border-left: 3px solid var(--primary-color);
+}
+
+.education-item h4 {
+    margin-bottom: 0.2em;
+}
+
+.education-item h5 {
+    color: var(--secondary-color);
+    font-weight: normal;
+    margin-bottom: 0.5em;
+}
+
+/* Contact */
+#contact .contact-info p {
+    display: block; /* Stack contact info vertically */
+    margin: 0.8em 0;
+}
+
+/* Footer */
+footer {
+    text-align: center;
+    margin-top: 4rem;
+    padding: 1.5rem;
+    color: var(--secondary-color);
+    font-size: 0.9em;
+    border-top: 1px solid var(--border-color);
+    transition: color var(--transition-speed) ease, border-color var(--transition-speed) ease;
+}
+
+/* Theme Switch */
+.theme-switch-wrapper {
+    position: fixed; /* Keep it in view */
+    top: 15px;
+    right: 15px;
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+}
+
+/* Optional: Add text next to the switch */
+/* .theme-switch-wrapper span {
+    margin-left: 10px;
+    font-size: 1rem;
+    color: var(--text-color);
+} */
+
+.theme-switch {
+    display: inline-block;
+    height: 26px; /* Smaller switch */
+    position: relative;
+    width: 50px; /* Smaller switch */
+}
+
+.theme-switch input {
+    display: none;
+}
+
+.slider {
+    background-color: #ccc; /* Default background */
+    bottom: 0;
+    cursor: pointer;
+    left: 0;
+    position: absolute;
+    right: 0;
+    top: 0;
+    transition: .4s;
+}
+
+.slider:before {
+    background-color: #fff; /* Slider handle */
+    bottom: 3px; /* Adjust position */
+    content: "";
+    height: 20px; /* Smaller handle */
+    left: 3px; /* Adjust position */
+    position: absolute;
+    transition: .4s;
+    width: 20px; /* Smaller handle */
+}
+
+input:checked + .slider {
+    background-color: var(--primary-color-dark); /* Use dark primary when checked (dark mode active) */
+}
+
+/* Adjust slider background for light mode */
+body.light-mode .theme-switch input:not(:checked) + .slider {
+     background-color: var(--primary-color-light); /* Use light primary when unchecked (light mode active) */
+}
+
+
+input:checked + .slider:before {
+    transform: translateX(24px); /* Adjust slide distance */
+}
+
+.slider.round {
+    border-radius: 26px; /* Adjust for smaller height */
+}
+
+.slider.round:before {
+    border-radius: 50%;
+}
+
+
+/* Animations - Fade In / Slide In */
+/* These classes will be added by JavaScript */
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Apply animations - can be triggered by JS on scroll */
+.fade-in {
+    animation: fadeIn 0.8s ease-out forwards;
+}
+
+/* .slide-in elements will have the .visible class added by JS */
+
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .container {
+        padding: 0 1rem;
+        margin: 1rem auto;
+    }
+
+    h1 { font-size: 2.2em; }
+    h2 { font-size: 1.5em; }
+    h3.section-title { font-size: 1.7em; }
+
+    .section {
+        padding: 1.5rem;
+        margin-bottom: 2.5rem;
+    }
+
+    .projects-grid {
+        grid-template-columns: 1fr; /* Stack projects on smaller screens */
+    }
+
+    .skills-container {
+         grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+         gap: 1.5rem;
+    }
+
+    .timeline {
+        padding-left: 20px;
+    }
+
+    .timeline-item::before {
+        left: -16px; /* Adjust dot position */
+        width: 10px;
+        height: 10px;
+    }
+
+    .theme-switch-wrapper {
+        top: 10px;
+        right: 10px;
+    }
+}
+
+@media (max-width: 480px) {
+    body {
+        font-size: 15px; /* Adjust base font size for mobile */
+    }
+
+    h1 { font-size: 1.8em; }
+    h2 { font-size: 1.3em; }
+    h3.section-title { font-size: 1.5em; }
+
+    .section {
+        padding: 1rem;
+    }
+
+    .contact-info p, .social-links a {
+        display: block; /* Stack contact info */
+        margin: 0.5em 0;
+        text-align: center;
+    }
+     .social-links a {
+        margin: 0 0.5em; /* Reduce spacing */
+    }
+    .social-links i {
+        font-size: 1.6em;
+    }
+
+    .project-card img {
+        height: 150px;
+    }
+}
