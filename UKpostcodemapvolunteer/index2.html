@@ -410,9 +410,12 @@
                     <h3>How It Works</h3>
                     <p>This tool uses the Nominatim API to convert postcodes into geographical coordinates. Then, depending on the transport method selected:</p>
                     <ul style="padding-left: 20px; margin-bottom: 20px;">
-                        <li>For "Straight Line" method, it calculates distances using the Haversine formula</li>
-                        <li>For other transport methods, it estimates travel distances and times based on the selected mode</li>
+                        <li><strong>Straight Line:</strong> Calculates the direct distance using the Haversine formula</li>
+                        <li><strong>Driving:</strong> Estimates road distance (approximately 30% longer than straight line) with average speed of 25 mph</li>
+                        <li><strong>Walking:</strong> Estimates walking distance (approximately 20% longer than straight line) with average speed of 3 mph</li>
+                        <li><strong>Bicycling:</strong> Estimates cycling distance (approximately 25% longer than straight line) with average speed of 12 mph</li>
                     </ul>
+                    <p><em>Note: For more accurate routing, a dedicated routing service would be used in a production environment.</em></p>
                 </div>
             </div>
 
@@ -564,20 +567,54 @@
             const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
             const distance = R * c * 0.621371; // Convert km to miles
             
-            return {
-                distance: distance,
-                time: estimateTravelTime(distance, 'straight')
-            };
+            return distance;
+        }
+
+        // Calculate distance based on transport method
+        async function calculateDistance(coord1, coord2, transportMethod) {
+            const straightLineDistance = calculateHaversineDistance(coord1, coord2);
+            
+            if (transportMethod === 'straight') {
+                return {
+                    distance: straightLineDistance,
+                    time: estimateTravelTime(straightLineDistance, 'straight')
+                };
+            }
+            
+            // For other transport methods, use OpenRouteService API or estimate based on straight line
+            try {
+                // For now, we'll estimate based on straight line distance with multipliers
+                // In a production app, you'd want to use a proper routing API
+                const multipliers = {
+                    'driving': 1.3,    // Roads typically add 30% to straight line distance
+                    'walking': 1.2,    // Walking paths are usually more direct
+                    'bicycling': 1.25  // Cycling routes are between walking and driving
+                };
+                
+                const multiplier = multipliers[transportMethod] || 1;
+                const estimatedDistance = straightLineDistance * multiplier;
+                
+                return {
+                    distance: estimatedDistance,
+                    time: estimateTravelTime(estimatedDistance, transportMethod)
+                };
+            } catch (error) {
+                console.warn(`Could not get ${transportMethod} route, using straight line distance:`, error);
+                return {
+                    distance: straightLineDistance,
+                    time: estimateTravelTime(straightLineDistance, transportMethod)
+                };
+            }
         }
 
         // Estimate travel time based on distance and transport method
         function estimateTravelTime(distance, method) {
-            // Average speeds in mph
+            // Average speeds in mph (more realistic estimates)
             const speeds = {
-                'driving': 30,
-                'walking': 3,
-                'bicycling': 10,
-                'straight': 30
+                'driving': 25,     // Average urban/rural driving speed
+                'walking': 3,      // Average walking speed
+                'bicycling': 12,   // Average cycling speed
+                'straight': 25     // Use driving speed for straight line reference
             };
             
             const speed = speeds[method] || speeds.driving;
@@ -697,6 +734,7 @@
                 <div class="info-box" style="margin-top: 20px; margin-bottom: 20px;">
                     <h3>Summary</h3>
                     <p>Found ${filteredResults.length} volunteers within ${maxDistance} miles radius (out of ${allResults.length} total)</p>
+                    <p>Transport method: <strong>${document.getElementById('transportMethod').options[document.getElementById('transportMethod').selectedIndex].text}</strong></p>
                     <p>Closest volunteer: ${filteredResults[0].postcode} (${filteredResults[0].distance.toFixed(2)} miles)</p>
                     <p>Average distance: ${(filteredResults.reduce((sum, r) => sum + r.distance, 0) / filteredResults.length).toFixed(2)} miles</p>
                 </div>
@@ -794,7 +832,7 @@
                         const coords = await getCoordinates(postcode);
                         
                         // Calculate distance based on transport method
-                        const result = calculateHaversineDistance(requesterCoords, coords);
+                        const result = await calculateDistance(requesterCoords, coords, transportMethod);
                         
                         return {
                             postcode,
